@@ -16,7 +16,9 @@ dialogModule.provider("$dialog", function(){
   // The default options for all dialogs.
   var defaults = {
     backdrop: true,
-    dialogClass: 'modal',
+    modalClass: 'modal',
+    dialogClass: 'modal-dialog',
+    contentClass: 'modal-content',
     backdropClass: 'modal-backdrop',
     transitionClass: 'fade',
     triggerClass: 'in',
@@ -26,9 +28,9 @@ dialogModule.provider("$dialog", function(){
     keyboard: true, // close with esc key
     backdropClick: true // only in conjunction with backdrop=true
     /* other options: template, templateUrl, controller */
-	};
+  };
 
-	var globalOptions = {};
+  var globalOptions = {};
 
   var activeBackdrops = {value : 0};
 
@@ -38,21 +40,21 @@ dialogModule.provider("$dialog", function(){
   //        // don't close dialog when backdrop is clicked by default
   //        $dialogProvider.options({backdropClick: false});
   //      });
-	this.options = function(value){
-		globalOptions = value;
-	};
+  this.options = function(value){
+    globalOptions = value;
+  };
 
   // Returns the actual `$dialog` service that is injected in controllers
-	this.$get = ["$http", "$document", "$compile", "$rootScope", "$controller", "$templateCache", "$q", "$transition", "$injector",
+  this.$get = ["$http", "$document", "$compile", "$rootScope", "$controller", "$templateCache", "$q", "$transition", "$injector",
   function ($http, $document, $compile, $rootScope, $controller, $templateCache, $q, $transition, $injector) {
 
-		var body = $document.find('body');
+    var body = $document.find('body');
 
-		function createElement(clazz) {
-			var el = angular.element("<div>");
-			el.addClass(clazz);
-			return el;
-		}
+    function createElement(clazz) {
+      var el = angular.element("<div>");
+      el.addClass(clazz);
+      return el;
+    }
 
     // The `Dialog` class represents a modal dialog. The dialog class can be invoked by providing an options object
     // containing at lest template or templateUrl and controller:
@@ -62,7 +64,7 @@ dialogModule.provider("$dialog", function(){
     // Dialogs can also be created using templateUrl and controller as distinct arguments:
     //
     //     var d = new Dialog('path/to/dialog.html', MyDialogController);
-		function Dialog(opts) {
+    function Dialog(opts) {
 
       var self = this, options = this.options = angular.extend({}, defaults, globalOptions, opts);
       this._open = false;
@@ -70,14 +72,19 @@ dialogModule.provider("$dialog", function(){
       this.backdropEl = createElement(options.backdropClass);
       if(options.backdropFade){
         this.backdropEl.addClass(options.transitionClass);
-        this.backdropEl.removeClass(options.triggerClass);
       }
 
-      this.modalEl = createElement(options.dialogClass);
+      this.modalEl = createElement(options.modalClass);
       if(options.dialogFade){
         this.modalEl.addClass(options.transitionClass);
-        this.modalEl.removeClass(options.triggerClass);
       }
+
+      this.modalEl.css("display", "block");
+
+      this.dialogEl = createElement(options.dialogClass);
+      this.modalEl.append(this.dialogEl);
+      this.contentEl = createElement(options.contentClass);
+      this.dialogEl.append(this.contentEl);
 
       this.handledEscapeKey = function(e) {
         if (e.which === 27) {
@@ -88,9 +95,11 @@ dialogModule.provider("$dialog", function(){
       };
 
       this.handleBackDropClick = function(e) {
-        self.close();
-        e.preventDefault();
-        self.$scope.$apply();
+        if (e.target == e.currentTarget) {
+          self.close();
+          e.preventDefault();
+          self.$scope.$apply();
+        }
       };
     }
 
@@ -118,20 +127,20 @@ dialogModule.provider("$dialog", function(){
       this._loadResolves().then(function(locals) {
         var $scope = locals.$scope = self.$scope = locals.$scope ? locals.$scope : $rootScope.$new();
 
-        self.modalEl.html(locals.$template);
+        self.contentEl.html(locals.$template);
 
         if (self.options.controller) {
           var ctrl = $controller(self.options.controller, locals);
-          self.modalEl.children().data('ngControllerController', ctrl);
+          self.contentEl.children().data('ngControllerController', ctrl);
         }
 
-        $compile(self.modalEl)($scope);
+        $compile(self.contentEl)($scope);
         self._addElementsToDom();
 
         // trigger tranisitions
         setTimeout(function(){
-          if(self.options.dialogFade){ self.modalEl.addClass(self.options.triggerClass); }
-          if(self.options.backdropFade){ self.backdropEl.addClass(self.options.triggerClass); }
+          self.modalEl.addClass(self.options.triggerClass);
+          self.backdropEl.addClass(self.options.triggerClass);
         });
 
         self._bindEvents();
@@ -180,12 +189,12 @@ dialogModule.provider("$dialog", function(){
 
     Dialog.prototype._bindEvents = function() {
       if(this.options.keyboard){ body.bind('keydown', this.handledEscapeKey); }
-      if(this.options.backdrop && this.options.backdropClick){ this.backdropEl.bind('click', this.handleBackDropClick); }
+      if(this.options.backdrop && this.options.backdropClick){ this.modalEl.bind('click', this.handleBackDropClick); }
     };
 
     Dialog.prototype._unbindEvents = function() {
       if(this.options.keyboard){ body.unbind('keydown', this.handledEscapeKey); }
-      if(this.options.backdrop && this.options.backdropClick){ this.backdropEl.unbind('click', this.handleBackDropClick); }
+      if(this.options.backdrop && this.options.backdropClick){ this.modalEl.unbind('click', this.handleBackDropClick); }
     };
 
     Dialog.prototype._onCloseComplete = function(result) {

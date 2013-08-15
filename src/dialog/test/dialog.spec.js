@@ -111,8 +111,8 @@ describe('Given ui.bootstrap.dialog', function(){
 			});
 		});
 
-		describe('dialogClass:foo, backdropClass:bar', function(){
-			useDialogWithGlobalOption({dialogClass: 'foo', backdropClass: 'bar'});
+		describe('modalClass:foo, backdropClass:bar', function(){
+			useDialogWithGlobalOption({modalClass: 'foo', backdropClass: 'bar'});
 
 			it('backdrop class should be changed', function(){
 				expect($document.find('body > div.bar').length).toBe(1);
@@ -238,7 +238,7 @@ describe('Given ui.bootstrap.dialog', function(){
 		beforeEach(function(){
 			createDialog({template:'foo'});
 			openDialog();
-			$document.find('body > div.modal-backdrop').click();
+			$document.find('body > div.modal').click();
 		});
 
 		dialogShouldBeClosed();
@@ -285,7 +285,7 @@ describe('Given ui.bootstrap.dialog', function(){
 		});
 
 		it('should use the specified template', function(){
-			expect($document.find('body > div.modal > div.modal-header').length).toBe(1);
+			expect($document.find('body > div.modal > div.modal-dialog > div.modal-content > div.modal-header').length).toBe(1);
 		});
 	});
 
